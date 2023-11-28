@@ -1,12 +1,7 @@
-import argparse
-import torch
 import os
+import argparse
+from generator import DiffusionGenerator
 from datetime import datetime
-from diffusers import (
-    StableDiffusionPipeline,
-    DPMSolverMultistepScheduler,
-    DiffusionPipeline,
-)
 
 
 def setup_argparse():
@@ -16,7 +11,7 @@ def setup_argparse():
         "-p",
         "--prompt",
         type=str,
-        default="DVD still from 1981 dark fantasy film Excalibur, Frozen Church, red brown toy poodle warrior, dark light, sunshine, portrait",
+        default="DVD still from Dark Fantasy Film The Legend 1985,, red brown toy poodle as a hedge knight in the dungeon",
         help="Specify the prompt for generating images (default: cute red brown toy poodle in art brut style)",
     )
 
@@ -40,62 +35,11 @@ def setup_argparse():
         "-ns",
         "--num_interfaces",
         type=int,
-        default=10,
-        help="Number of interface steps to proceed on the image (Default: 10)",
+        default=25,
+        help="Number of interface steps to proceed on the image (default: 25)",
     )
 
     return parser.parse_args()
-
-
-def load_diffusion_pipeline(
-    model_id,
-    use_safetensors=True,
-):
-    pipe = StableDiffusionPipeline.from_pretrained(
-        model_id,
-        torch_dtype=torch.float32,
-        use_safetensors=use_safetensors,
-    )
-
-    pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
-    pipe = pipe.to("cuda" if torch.cuda.is_available() else "cpu")
-
-    return pipe
-
-
-def load_diffusion_refiner(
-    refiner_model_id,
-    text_encoder,
-    vae,
-    use_safetensors=True,
-):
-    refiner = DiffusionPipeline.from_pretrained(
-        refiner_model_id,
-        text_encoder_2=text_encoder,
-        vae=vae,
-        torch_dtype=torch.float32,
-        use_safetensors=use_safetensors,
-    )
-
-    return refiner
-
-
-def generate_images(
-    *,
-    pipeline,
-    prompt: str,
-    high_noise_frac: float,
-    num_inference_steps: int,
-    num_images_per_prompt: int,
-):
-    result = pipeline(
-        prompt=prompt,
-        denoising_end=high_noise_frac,
-        num_inference_steps=num_inference_steps,
-        num_images_per_prompt=num_images_per_prompt,
-    ).images
-
-    return result
 
 
 def save_images(
@@ -118,15 +62,12 @@ def main():
 
     high_noise_frac = 0.8
 
-    pipeline = load_diffusion_pipeline(args.model_id, use_safetensors=True)
+    pipeline = DiffusionGenerator.load_diffusion_pipeline(
+        args.model_id,
+        use_safetensors=True,
+    )
 
-    # pipeline.unet = torch.compile(
-    #     pipeline.unet,
-    #     mode="reduce-overhead",
-    #     fullgraph=True,
-    # )
-
-    images = generate_images(
+    images = DiffusionGenerator.generate_images(
         pipeline=pipeline,
         prompt=args.prompt,
         high_noise_frac=high_noise_frac,

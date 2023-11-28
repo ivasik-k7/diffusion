@@ -1,24 +1,47 @@
 # Image Generation using Stable Diffusion Models
 
-This repository contains a Python script for generating images using Stable Diffusion Models. The script leverages the `diffusers` library and provides a command-line interface for easy use.
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![ComeBackAlive](https://img.shields.io/badge/ComeBackAlive-%E2%9D%A4-ff69b4.svg)](https://savelife.in.ua/en/)
 
-## Getting Started
+This repository contains scripts for generating images using a Stable Diffusion model and pushing them to an AWS S3 bucket. The asynchronous script is designed to run on an EC2 instance, continuously generating images based on a given prompt and uploading them to an S3 bucket.
+
+## Setup
 
 ### Prerequisites
 
-Make sure you have Python installed on your machine. You can install the required dependencies using the following command:
+- Python 3.7 or later
+- Pip package manager
+- AWS account with S3 bucket access
+- (Optional) GPU-enabled machine for faster image generation
 
-```bash
-pip install -r requirements.txt
-```
+### Installation
 
-### Usage
+1. Clone the repository:
 
-The script can be run with the following command:
+   ```bash
+   git clone https://github.com/ivasik-k7/diffusion.git mlops-generations
+   cd mlops-generations
+   ```
 
-```bash
-python main.py -p "Your custom prompt" -m "model_id" -ni 5 -ns 10
-```
+2. Install dependencies:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Set up AWS credentials:
+
+   Ensure that you have AWS credentials configured. You can either set them as environment variables or use the AWS CLI to configure them.
+
+   ```bash
+   aws configure
+   ```
+
+4. (Optional) Install CUDA and cuDNN for GPU acceleration:
+
+   If you have a GPU-enabled machine, you can install CUDA and cuDNN for faster image generation. Follow the instructions for your specific GPU model.
+
+## Usage
 
 - **-p, --prompt**: Specify the prompt for generating images (default: "DVD still from 1981 dark fantasy film Excalibur, Frozen Church, red brown toy poodle warrior, dark light, sunshine, portrait").
 - **-m, --model_id**: Specify the model ID (default: "stabilityai/stable-diffusion-2-1").
@@ -27,25 +50,42 @@ python main.py -p "Your custom prompt" -m "model_id" -ni 5 -ns 10
 
 - **-ns, --num_interfaces**: Number of interface steps to proceed on the image (Default: 10).
 
-### Script Structure
+### Image Generation and Upload to S3
 
-- **setup_argparse**: Configures command-line arguments for the script.
+1. Run the asyncio script on an EC2 instance:
 
-- **load_diffusion_pipeline**: Loads the Stable Diffusion Pipeline based on the specified model ID.
+   ```bash
+   python auto.py -p "Your prompt here" -m "stabilityai/stable-diffusion-2-1" -ni 1 -ns 25
+   ```
 
-- **load_diffusion_refiner**: Loads a Diffusion Refiner using a separate model ID, text encoder, and VAE.
+   Replace `"Your prompt here"` with your desired prompt.
 
-- **generate_images**: Generates images based on the provided prompt and pipeline settings.
+   This script generates images asynchronously, waits for 10 seconds, and then uploads the images to the specified S3 bucket.
 
-- **save_images**: Saves the generated images in an output folder.
+### Image Generation and Local Saving
 
-- **main**: The main function that orchestrates the entire image generation process.
+1. Run the main script for local image generation:
 
-### Configuration
+   ```bash
+   python main.py -p "Your prompt here" -m "stabilityai/stable-diffusion-2-1" -ni 25 -ns 1
+   ```
 
-The script uses the `diffusers` library for Stable Diffusion Models. The model and pipeline configurations are specified in the script and can be adjusted as needed.
+   Replace `"Your prompt here"` with your desired prompt.
 
-### Output
+   This script generates images locally and saves them in the `out` folder with a timestamped subfolder.
+
+## Customization
+
+- Adjust the script arguments to customize prompt, model ID, number of images, and interface steps.
+- Modify S3 bucket details in the `auto.py` script (`AWS_S3_BUCKET` and `S3_FOLDER_PATH` variables).
+
+## Notes
+
+Images are generated based on the provided prompt using the Stable Diffusion model.
+The asynchronous script (main_asyncio.py) is designed to run indefinitely on an EC2 instance.
+Make sure to handle AWS credentials securely.
+
+## Output
 
 Generated images are saved in the "out" folder. Each run creates a new folder with a timestamp to store the images.
 
@@ -54,3 +94,7 @@ Generated images are saved in the "out" folder. Each run creates a new folder wi
 ![Example 1](examples/dvdstifrodar_0.png)
 ![Example 2](examples/dvdstifrodar_1.png)
 ![Example 3](examples/dvdstifrodar_2.png)
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
