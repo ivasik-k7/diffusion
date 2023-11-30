@@ -1,9 +1,13 @@
 import argparse
+import os
 import boto3
 import asyncio
 import uuid
+from PIL import Image
+from io import BytesIO
 from botocore.exceptions import NoCredentialsError
 from generator import DiffusionGenerator
+from utils import setup_argparse
 
 KB = 1024
 MB = 1024 * KB
@@ -18,54 +22,25 @@ supported_file_extensions: list = ["jpeg", "jpg", "png"]
 s3 = boto3.client("s3")
 
 
-def setup_argparse():
-    parser = argparse.ArgumentParser(description="Your script description here.")
+async def upload_file(image: Image):
+    file_extension: str = "png"
+    image_bytes_io = BytesIO()
+    image.save(image_bytes_io, format="PNG")
 
-    parser.add_argument(
-        "-p",
-        "--prompt",
-        type=str,
-        default="DVD still from Dark Fantasy Film The Legend 1985,, red brown toy poodle as a hedge knight in the dungeon",
-        help="Specify the prompt for generating images (default: cute red brown toy poodle in art brut style)",
-    )
+    image_size_bytes = image_bytes_io.getbuffer().nbytes
 
-    parser.add_argument(
-        "-m",
-        "--model_id",
-        type=str,
-        default="stabilityai/stable-diffusion-2-1",
-        help="Specify the model ID (default: stabilityai/stable-diffusion-2-1)",
-    )
-
-    parser.add_argument(
-        "-ni",
-        "--num_images",
-        type=int,
-        default=1,
-        help="Number of images to generate (default: 1)",
-    )
-
-    parser.add_argument(
-        "-ns",
-        "--num_interfaces",
-        type=int,
-        default=25,
-        help="Number of interface steps to proceed on the image (default: 25)",
-    )
-
-    return parser.parse_args()
-
-
-async def upload_file(image):
-    file_content = await image.read()
-
-    file_size = len(file_content)
-
-    if not 0 < file_size <= 2 * MB:
+    if not 0 < image_size_bytes <= 2 * MB:
         print("The file are too big to be uploaded to S3 Bucket")
         return
 
-    file_extension: str = image.filename.split(".")[-1]
+    try:
+        file_extension = image.filename.split(".")[-1]
+    except Exception as e:
+        file_extension = "png"
+
+    if file_extension not in supported_file_extensions:
+        print("The file extenstion not coresponded to expected generations")
+        return
 
     filename: str = "{name}.{extension}".format(
         extension=file_extension,
@@ -74,16 +49,13 @@ async def upload_file(image):
 
     object_key: str = f"{S3_FOLDER_PATH}/{filename}"
 
-    if file_extension not in supported_file_extensions:
-        print("The file extenstion not coresponded to expected generations")
-        return
-
     try:
-        image.file.seek(0)
+        image_bytes_io.seek(0)
 
-        s3.upload_fileobj(image.file, AWS_S3_BUCKET, object_key)
+        s3.upload_fileobj(image_bytes_io, AWS_S3_BUCKET, object_key)
 
         s3_url = f"https://{AWS_S3_BUCKET}.s3.amazonaws.com/{object_key}"
+
         print(
             f"The images has been succesfully uploaded with the following url: {s3_url}"
         )
@@ -94,12 +66,12 @@ async def upload_file(image):
 
 
 async def main():
-    arguments = setup_argparse()
+    args = setup_argparse()
 
     high_noise_frac = 0.8
 
     pipeline = DiffusionGenerator.load_diffusion_pipeline(
-        model_id=arguments.model_id,
+        model_id=args.model_id,
         use_safetensors=True,
     )
 
@@ -108,15 +80,18 @@ async def main():
 
         images = DiffusionGenerator.generate_images(
             pipeline=pipeline,
-            prompt=arguments.prompt,
+            prompt=args.prompt,
+            num_inference_steps=args.num_interfaces,
+            num_images_per_prompt=args.num_images,
+            negative_prompt=args.negative_prompt,
             high_noise_frac=high_noise_frac,
-            num_inference_steps=arguments.num_interfaces,
-            num_images_per_prompt=arguments.num_images,
+            height=args.height,
+            width=args.width,
         )
 
         if images:
             for i in images:
-                upload_file(i)
+                await upload_file(i)
 
 
 if __name__ == "__main__":

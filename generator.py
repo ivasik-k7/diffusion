@@ -12,12 +12,18 @@ class DiffusionGenerator:
         *,
         pipeline,
         prompt: str,
+        negative_prompt: str,
         high_noise_frac: float,
         num_inference_steps: int,
         num_images_per_prompt: int,
+        width: int,
+        height: int,
     ):
         result = pipeline(
             prompt=prompt,
+            negative_prompt=negative_prompt,
+            height=height,
+            width=width,
             denoising_end=high_noise_frac,
             num_inference_steps=num_inference_steps,
             num_images_per_prompt=num_images_per_prompt,
