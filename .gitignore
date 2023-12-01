@@ -18,7 +18,12 @@
 *.pyc
 __pycache__/
 
-
 # Output related files
 /out
 /out/*
+
+# todo related
+todo.md
+
+# Store related
+.DS_Store

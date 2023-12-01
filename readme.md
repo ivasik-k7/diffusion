@@ -2,6 +2,8 @@
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![ComeBackAlive](https://img.shields.io/badge/ComeBackAlive-%E2%9D%A4-ff69b4.svg)](https://savelife.in.ua/en/)
+[![Known Vulnerabilities](https://snyk.io/test/github/ivasik-k7/diffusion/badge.svg)](https://snyk.io/test/github/ivasik-k7/diffusion)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=ivasik-k7_diffusion&metric=alert_status)](https://sonarcloud.io/dashboard?id=ivasik-k7_diffusion)
 
 This repository contains scripts for generating images using a Stable Diffusion model and pushing them to an AWS S3 bucket. The asynchronous script is designed to run on an EC2 instance, continuously generating images based on a given prompt and uploading them to an S3 bucket.
 
