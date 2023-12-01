@@ -36,7 +36,7 @@ def setup_argparse():
         "-p",
         "--prompt",
         type=str,
-        default="dvd screenshot of 1987 Dark Souls fantasy film,abstract lonely red brown toy poodle as a necromancer in the dungeon",
+        default="Generate an image capturing the essence of a screenshot from the 1988 movie 'Red Heat,' featuring a portrait of a red-brown toy poodle in a vintage film aesthetic. Ensure the composition reflects the film's era, incorporating the visual style and color grading characteristic of that time.",
         help="Specify the prompt for generating images",
     )
 
